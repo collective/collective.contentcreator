@@ -1,107 +1,170 @@
 # -*- coding: utf-8 -*-
-from Products.ATContentTypes.lib import constraintypes
+from plone.app.dexterity import behaviors
 from Products.CMFCore.WorkflowCore import WorkflowException
-from Products.CMFCore.utils import getToolByName
+from Products.CMFPlone.interfaces.constrains import ISelectableConstrainTypes
+from Products.CMFPlone.utils import getToolByName
 from Products.CMFPlone.utils import normalizeString
 
+import json
 import logging
+import plone.api
 
-logger = logging.getLogger('collective.setuphandlertools')
+
+logger = logging.getLogger('collective.contentcreator')
 
 
-def create_item(ctx, id, item, logger=logger):
-    """Create an Archetype content item in the given context.
+def create_item(
+        container,
+        item,
+        default_lang=None,
+        default_wf_action=None,
+        logger=logger):
+    """Create a content item in the given context.
     This function is called by create_item_runner for each content found in
     it's given data structure.
 
-    @param ctx: The context in which the item should be created.
-    @param id: The identifier of the item to be created. If it exists, the
-               item won't be created.
-    @param item: A dictionary with the item configuration. See
-                 create_item_runner for a more verbose explanation.
-    @param logger: (Optional) A logging instance.
+    :param container: The context in which the item should be created.
+    :type container: Plone content object
+    :param item: Dictionary with content object configuration.
+    :type item: dict
+    :param default_lang: Default language.
+    :type default_lang: string
+    :param default_wf_action: Default workflow transition action.
+    :type default_wf_action: string
+    :param logger: Logger instance.
     """
-    wft = getToolByName(ctx, 'portal_workflow')
-    if id not in ctx.contentIds():
-        ctx.invokeFactory(
-            item['type'], id, title=item['title'], **item['data'])
-        logger.info('created %s' % id)
-    if 'setExcludeFromNav' in item['opts']:
-        ctx[id].setExcludeFromNav(item['opts']['setExcludeFromNav'])
-    if 'setLayout' in item['opts']:
-        ctx[id].setLayout(item['opts']['setLayout'])
-    if 'setLocallyAllowedTypes' in item['opts']:
+    id_ = item['id']
+    if id_ not in container.contentIds():
+        plone.api.content.create(
+            container=container,
+            type=item['type'],
+            id=id_,
+            title=item['title'],
+            safe_id=False,
+            **item['data']
+        )
+        logger.info('created %s' % id_)
+
+    # get newly created object
+    ob = container[id_]
+
+    opts = item.get('opts', {})
+
+    # EXCLUDE FROM NAVIGATION
+    exclude_from_nav = opts.get('exclude_from_nav', False)
+    if exclude_from_nav:
+        be = behaviors.exclfromnav.IExcludeFromNavigation(ob, None)
+        if be:
+            be.exclude_from_nav = exclude_from_nav
+
+    # LAYOUT
+    layout = opts.get('layout', False)
+    if layout:
+        ob.setLayout(layout)
+
+    # CONSTRAIN TYPES
+    locally_allowed_types = opts.get('locally_allowed_types', False)
+    immediately_allowed_types = opts.get('immediately_allowed_types', False)
+    if locally_allowed_types or immediately_allowed_types:
+        be = ISelectableConstrainTypes(ob, None)
+        if be:
+            be.setConstrainTypesMode(behaviors.constrains.ENABLED)
+            if locally_allowed_types:
+                be.setLocallyAllowedTypes = locally_allowed_types
+            if immediately_allowed_types:
+                be.setImmediatelyAddableTypes = immediately_allowed_types
+
+    # WORKFLOW ACTION
+    workflow_action = opts.get('workflow_action', default_wf_action)
+    if workflow_action:
+        wft = getToolByName(container, 'portal_workflow')
         try:
-            ctx[id].setConstrainTypesMode(constraintypes.ENABLED)
-            ctx[id].setLocallyAllowedTypes(
-                item['opts']['setLocallyAllowedTypes'])
-        except:
-            pass  # not a folder?
-    if 'setImmediatelyAddableTypes' in item['opts']:
-        try:
-            ctx[id].setConstrainTypesMode(constraintypes.ENABLED)
-            ctx[id].setImmediatelyAddableTypes(
-                item['opts']['setImmediatelyAddableTypes'])
-        except:
-            pass  # not a folder?
-    if 'workflow' in item['opts']:
-        if item['opts']['workflow'] is not None:
-            # else leave it in original state
-            wft.doActionFor(ctx[id], item['opts']['workflow'])
-    else:
-        try:
-            wft.doActionFor(ctx[id], 'publish')
+            wft.doActionFor(container[id_], workflow_action)
         except WorkflowException:
             pass  # e.g. "No workflows found"
-    ctx[id].setLanguage(item['opts']['lang'])
-    ctx[id].reindexObject()
-    logger.info('configured %s' % id)
+
+    # LANGUAGE
+    lang = opts.get('lang', default_lang)
+    if lang:
+        ob.setLanguage(lang)
+
+    # REINDEX
+    ob.reindexObject()
+
+    logger.info('configured %s' % id_)
 
 
-def create_item_runner(ctx, content, lang='en', logger=logger):
-    """Create Archetype contents from a list of dictionaries, where each
-    dictionary describes a content item and optionally it's childs.
+def create_item_runner(
+        container,
+        json_structure,
+        default_lang=None,
+        default_wf_action=None,
+        logger=logger):
+    """Create Dexterity contents from a JSON structure.
 
-    @param ctx: The context in which the item should be created.
-    @param content: The datastructure of the contents to be created. See
-                    below.
-    @param lang: The default language of the content items to be created.
-    @param logger: (Optional) A logging instance.
+    :param container: The context in which the item should be created.
+    :type container: Plone content object
+    :param json_structure: JSON structure from which the content is created.
+    :type json_structure: string
+    :param default_lang: Default language.
+    :type default_lang: string
+    :param default_wf_action: Default workflow transition action.
+    :type default_wf_action: string
+    :param logger: Logger instance.
 
     The datastructure of content is like so:
 
-    [{'type': None,
-      'id': None,
-      'title': None,
-      'data':{'description': None},
-      'childs':[],
-      'opts':{
-          'lang': None,
-          'setDefault': None,
-          'setExcludeFromNav': None,
-          'setLayout': None,
-          'setLocallyAllowedTypes': None,
-          'setImmediatelyAddableTypes': None,
-          'workflow':None,}
-    },]
+    [{"type": "",
+      "id": "",
+      "title": "",
+      "data":{'description': ""},
+      "childs":[],
+      "opts":{
+          "lang": "",
+          "set_default": "",
+          "exclude_from_nav": "",
+          "layout": "",
+          "locally_allowed_types": "",
+          "immediately_allowed_types": "",
+          "workflow_action":""
+        }
+    }]
 
     Use the same structure for each child. Leave out, what you don't need.
     """
-    for item in content:
-        if 'id' not in item:
-            id = normalizeString(item['title'], context=ctx)
-        else:
-            id = item['id']
-        if 'opts' not in item or not item['opts']:
-            item['opts'] = {}
-        if 'data' not in item or not item['data']:
-            item['data'] = {}
-        if 'lang' not in item['opts']:
-            item['opts']['lang'] = lang
-        create_item(ctx, id, item, logger=logger)
-        if 'setDefault' in item['opts']:
-            ctx.setDefaultPage(id)
-        if 'childs' in item and item['childs']:
-            create_item_runner(ctx[id], item['childs'], lang=lang,
-                               logger=logger)
+    content_structure = json.loads(json_structure)
 
+    for item in content_structure:
+
+        # check/set title and id
+        id_ = item.get('id', None)
+        title = item.get('title', None)
+        assert(id_ or title)
+        if not id_:
+            item['id'] = id_ = normalizeString(title, context=container)
+        elif not title:
+            item['title'] = title = id_
+
+        # create
+        create_item(
+            container,
+            item,
+            default_lang=default_lang,
+            default_wf_action=default_wf_action,
+            logger=logger
+        )
+
+        # set default
+        if 'set_default' in item['opts']:
+            container.setDefaultPage(id_)
+
+        # recursively add children
+        childs = item.get('childs', False)
+        if childs:
+            create_item_runner(
+                container[id_],
+                childs,
+                default_lang=default_lang,
+                default_wf_action=default_wf_action,
+                logger=logger
+            )
