@@ -1,0 +1,5 @@
+====================
+collective.contentcreator
+====================
+
+User documentation
