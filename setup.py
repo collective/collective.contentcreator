@@ -7,7 +7,6 @@ from setuptools import setup
 
 long_description = '\n\n'.join([
     open('README.rst').read(),
-    open('CONTRIBUTORS.rst').read(),
     open('CHANGES.rst').read(),
 ])
 
@@ -39,19 +38,9 @@ setup(
     zip_safe=False,
     install_requires=[
         'plone.api',
-        'Products.GenericSetup>=1.8.2',
+        'plone.app.dexterity',
+        'Products.CMFCore',
+        'Products.CMFPlone',
         'setuptools',
-        'z3c.jbot',
     ],
-    extras_require={
-        'test': [
-            'plone.app.testing',
-            'plone.app.contenttypes',
-            'plone.app.robotframework[debug]',
-        ],
-    },
-    entry_points="""
-    [z3c.autoinclude.plugin]
-    target = plone
-    """,
 )

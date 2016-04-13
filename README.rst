@@ -1,69 +1,56 @@
-.. This README is meant for consumption by humans and pypi. Pypi can render rst files so please do not use Sphinx features.
-   If you want to learn more about writing documentation, please check out: http://docs.plone.org/about/documentation_styleguide.html
-   This text does not appear on pypi or github. It is a comment.
-
-==============================================================================
+=========================
 collective.contentcreator
-==============================================================================
+=========================
 
-Tell me what your product does
+Create content structures from JSON files or Python dictionaries.
 
-Features
---------
-
-- Can be bullet points
+This package is meant as a helper to quickly create content structures from JSON files or Python structures for the purpose of pre-filling a site in development.
+It's the successor of the package `collective.setuphandlertools <https://github.com/collective/collective.setuphandlertools>`_.
 
 
 Examples
 --------
 
-This add-on can be seen in action at the following sites:
-- Is there a page on the internet where everybody can see the features?
+Register a ``post_handler`` in a GenericSetup profile:
 
+..code-block::
+    <genericsetup:registerProfile
+        name="basic_content"
+        title="create basic content structure"
+        directory="profiles/basic_content"
+        description="Creates the basic content structure"
+        provides="Products.GenericSetup.interfaces.EXTENSION"
+        post_handler=".setuphandlers.basic_content"
+        />
 
-Documentation
--------------
+In your ``setuphanlder.py``:
+..code-block:: python
 
-Full documentation for end users can be found in the "docs" folder, and is also available online at http://docs.plone.org/foo/bar
+    from zope.component.hooks import getSite
 
+    def basic_content(context):
+        content_structure = load_json('data/basic_content.json', __file__)
+        create_item_runner(
+            getSite(),
+            content_structure,
+            default_lang='en',
+            default_wf_action='publish'
+        )
 
-Translations
-------------
+And in your ``data/basic_content.json``:
+..code-block::
 
-This product has been translated into
-
-- Klingon (thanks, K'Plai)
-
-
-Installation
-------------
-
-Install collective.contentcreator by adding it to your buildout::
-
-    [buildout]
-
-    ...
-
-    eggs =
-        collective.contentcreator
-
-
-and then running ``bin/buildout``
-
-
-Contribute
-----------
-
-- Issue Tracker: https://github.com/collective/collective.contentcreator/issues
-- Source Code: https://github.com/collective/collective.contentcreator
-- Documentation: https://docs.plone.org/foo/bar
-
-
-Support
--------
-
-If you are having issues, please let us know.
-We have a mailing list located at: project@example.com
+    [
+        {
+            "type": "Folder",
+            "id": "main",
+            "title": "Main Folder",
+            "childs": [
+                {"type": "Page",   "title": "Page within Folder", "opts": {"default_page": true}},
+                {"type": "Folder", "title": "Folder within Folder", "data": {"description": "Not much more in here."}}
+            ]
+        }
+    ]
 
 
 License
