@@ -41,6 +41,7 @@ def create_item(
         auto_id=False,
         default_lang=None,
         default_wf_action=None,
+        ignore_wf_types=['Image', 'File'],
         logger=logger):
     """Create a content item in the given context.
     This function is called by create_item_runner for each content found in
@@ -61,7 +62,11 @@ def create_item(
     :type default_lang: string
     :param default_wf_action: Default workflow transition action.
     :type default_wf_action: string
-    :param logger: Logger instance.
+    :param ignore_wf_types: Ignore to apply the workflow transition if item is
+                            one of these types.
+    :type ignore_wf_types: list (default: ['Image', 'File'])
+    :param logger: Logger to use.
+    :type logger: Python logging instance.
     """
 
     id_ = item.get('id', None)
@@ -124,15 +129,16 @@ def create_item(
                 logger.debug('{0}: immediately_allowed_types {1}'.format(path, immediately_allowed_types))  # noqa
 
     # WORKFLOW ACTION
-    workflow_action = opts.get('workflow_action', default_wf_action)
-    if workflow_action:
-        wft = getToolByName(container, 'portal_workflow')
-        try:
-            wft.doActionFor(ob, workflow_action)
-            logger.debug('{0}: workflow transition {1}'.format(path, workflow_action))  # noqa
-        except WorkflowException:
-            logger.warn('{0}: workflow transition setting failed for "{1}"'.format(path, workflow_action))  # noqa
-            pass  # e.g. "No workflows found"
+    if item['type'] not in ignore_wf_types:
+        workflow_action = opts.get('workflow_action', default_wf_action)
+        if workflow_action:
+            wft = getToolByName(container, 'portal_workflow')
+            try:
+                wft.doActionFor(ob, workflow_action)
+                logger.debug('{0}: workflow transition {1}'.format(path, workflow_action))  # noqa
+            except WorkflowException:
+                logger.warn('{0}: workflow transition setting failed for "{1}"'.format(path, workflow_action))  # noqa
+                pass  # e.g. "No workflows found"
 
     # LANGUAGE
     lang = opts.get('lang', default_lang)
@@ -153,6 +159,7 @@ def create_item_runner(
         auto_id=False,
         default_lang=None,
         default_wf_action=None,
+        ignore_wf_types=['Image', 'File'],
         logger=logger):
     """Create Dexterity contents from a JSON structure.
 
@@ -164,7 +171,11 @@ def create_item_runner(
     :type default_lang: string
     :param default_wf_action: Default workflow transition action.
     :type default_wf_action: string
-    :param logger: Logger instance.
+    :param ignore_wf_types: Ignore to apply the workflow transition if item is
+                            one of these types.
+    :type ignore_wf_types: list (default: ['Image', 'File'])
+    :param logger: Logger to use.
+    :type logger: Python logging instance.
 
     The datastructure of content is like so:
 
@@ -201,6 +212,7 @@ def create_item_runner(
             auto_id=auto_id,
             default_lang=default_lang,
             default_wf_action=default_wf_action,
+            ignore_wf_types=ignore_wf_types,
             logger=logger
         )
 
