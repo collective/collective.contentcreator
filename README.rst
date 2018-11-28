@@ -13,7 +13,8 @@ Examples
 
 Register a ``post_handler`` in a GenericSetup profile:
 
-..code-block::
+..code-block:: xml
+
     <genericsetup:registerProfile
         name="basic_content"
         title="create basic content structure"
@@ -24,6 +25,7 @@ Register a ``post_handler`` in a GenericSetup profile:
         />
 
 In your ``setuphanlder.py``:
+
 ..code-block:: python
 
     from zope.component.hooks import getSite
@@ -38,7 +40,8 @@ In your ``setuphanlder.py``:
         )
 
 And in your ``data/basic_content.json``:
-..code-block::
+
+..code-block:: json
 
     [
         {
