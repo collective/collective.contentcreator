@@ -24,7 +24,7 @@ Register a ``post_handler`` in a GenericSetup profile:
         post_handler=".setuphandlers.basic_content"
         />
 
-In your ``setuphanlder.py``:
+In your ``setuphandler.py``:
 
 .. code-block:: python
 
