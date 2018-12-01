@@ -28,7 +28,11 @@ In your ``setuphandler.py``:
 
 .. code-block:: python
 
+    # -*- coding: utf-8 -*-
+    from collective.contentcreator import create_item_runner
+    from collective.contentcreator import load_json
     from zope.component.hooks import getSite
+
 
     def basic_content(context):
         content_structure = load_json('data/basic_content.json', __file__)

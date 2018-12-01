@@ -29,7 +29,7 @@ setup(
     keywords='Python Plone',
     author='Johannes Raggam',
     author_email='thetetet@gmail.com',
-    url='https://pypi.python.org/pypi/collective.contentcreator',
+    url='https://github.com/collective/collective.contentcreator',
     license='GPL version 2',
     packages=find_packages('src', exclude=['ez_setup']),
     namespace_packages=['collective'],
