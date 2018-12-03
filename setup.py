@@ -13,7 +13,7 @@ long_description = '\n\n'.join([
 
 setup(
     name='collective.contentcreator',
-    version='2.0',
+    version='2.1.dev0',
     description="Create content structures from JSON configurations",
     long_description=long_description,
     # Get more from https://pypi.python.org/pypi?%3Aaction=list_classifiers
