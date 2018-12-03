@@ -75,19 +75,13 @@ def create_item_runner(
             "type": "",
             "id": "",
             "title": "",
-            "data": {
-                "description": ""
-            },
-            "childs": [],
+            "description": ""
+            "items": [],
             "opts": {
-                "lang": "",
                 "default_page": "",
-                "exclude_from_nav": "",
-                "layout": "",
                 "locally_allowed_types": [],
                 "immediately_allowed_types": [],
-                "workflow_action": ""
-              }
+            }
         }
     ]
 

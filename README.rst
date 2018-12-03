@@ -49,12 +49,12 @@ And in your ``data/basic_content.json``:
 
     [
         {
-            "type": "Folder",
+            "@type": "Folder",
             "id": "main",
             "title": "Main Folder",
-            "childs": [
-                {"type": "Page",   "title": "Page within Folder", "opts": {"default_page": true}},
-                {"type": "Folder", "title": "Folder within Folder", "data": {"description": "Not much more in here."}}
+            "items": [
+                {"@type": "Page",   "title": "Page within Folder"},
+                {"@type": "Folder", "title": "Folder within Folder", "description": "Not much more in here."}
             ]
         }
     ]
