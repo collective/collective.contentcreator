@@ -2,7 +2,7 @@ Changelog
 =========
 
 
-2.0 (unreleased)
+2.0 (2018-12-03)
 ----------------
 
 - Use ``plone.restapi`` and base content creator on ``plone.restapi.services.content.add``.
